@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="referrer" content="no-referrer">
+<!-- This page, and the dashboard it loads, may only talk to Google Apps Script. Nothing else is reachable from it. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://script.google.com https://script.googleusercontent.com; connect-src https://script.google.com https://script.googleusercontent.com; img-src data: blob: 'self'; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'">
+<title>Whispering Waves</title>
+<link rel="apple-touch-icon" href="icon.png" data-keep>
+<meta name="apple-mobile-web-app-capable" content="yes" data-keep>
+<meta name="mobile-web-app-capable" content="yes" data-keep>
+<meta name="apple-mobile-web-app-title" content="Whispering Waves" data-keep>
+<meta name="apple-mobile-web-app-status-bar-style" content="black" data-keep>
+<meta name="theme-color" content="#070c14" data-keep>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20x%3D%22.5%22%20y%3D%22.5%22%20width%3D%2231%22%20height%3D%2231%22%20rx%3D%226.5%22%20fill%3D%22%230d1724%22%20stroke%3D%22%2384714a%22%2F%3E%3Cg%20fill%3D%22%23e9d294%22%20stroke%3D%22%23e9d294%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cellipse%20cx%3D%2214%22%20cy%3D%2220%22%20rx%3D%2211%22%20ry%3D%225.6%22%20stroke%3D%22none%22%2F%3E%3Cpath%20d%3D%22M9.8%2015.4v-4.2h6.6l1.8%204.2z%22%20stroke-width%3D%221%22%2F%3E%3Cpath%20d%3D%22M12.8%2011V6.4h3.6M25%2020h3M28.2%2015.8v8.4%22%20fill%3D%22none%22%20stroke-width%3D%222%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%230d1724%22%3E%3Ccircle%20cx%3D%228%22%20cy%3D%2220%22%20r%3D%221.7%22%2F%3E%3Ccircle%20cx%3D%2214%22%20cy%3D%2220%22%20r%3D%221.7%22%2F%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%2220%22%20r%3D%221.7%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<script>
+/* =============================================================================
+   Whispering Waves: the loader.
+
+   This small file never needs replacing. Each time it is opened it shows the
+   dashboard it last fetched from your sheet script, and fetches a newer one
+   when the sheet owner has published it.
+
+   OPTIONAL. Fill these two in before you give this file to your friends, and
+   nobody has to type anything. Leave them empty to be asked on first open.
+   ========================================================================== */
+window.SUBSYNC_PRESET = {
+  address: "",      // the web app address from the sheet script, ending in /exec
+  passphrase: ""    // the passphrase you set from the sheet's SubSync menu
+};
+</script>
+<style>
+html,body{height:100%;margin:0}
+body{background:#070c14;color:#e8e2d0;font:15px/1.5 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue","Noto Sans",sans-serif;display:grid;place-items:center}
+main{width:min(460px,calc(100% - 40px));padding:28px 28px 24px;border:1px solid #84714a;border-radius:10px;background:linear-gradient(180deg,#1e2a3b,#141e2c);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+h1{margin:0 0 4px;font:600 24px/1.2 "Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;color:#ecd9a4;display:flex;align-items:center;gap:12px}
+h1 svg{width:44px;height:26px;flex:none}
+p{margin:10px 0 0;color:#aab6c6}
+p.bad{color:#f0705c}
+label{display:block;margin:16px 0 5px;color:#c8d0dc;font-size:13.5px}
+input{box-sizing:border-box;width:100%;padding:9px 11px;border-radius:6px;border:1px solid #2a384d;background:#0d1724;color:#e8e2d0;font:inherit}
+input:focus-visible,button:focus-visible{outline:2px solid #7fd4e8;outline-offset:2px}
+.row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+button{padding:9px 16px;border-radius:6px;border:1px solid #84714a;background:#2a384d;color:#ecd9a4;font:600 14px/1.2 inherit;font-family:inherit;cursor:pointer}
+button.quiet{border-color:#2a384d;color:#c8d0dc;font-weight:400}
+button[disabled]{opacity:.55;cursor:default}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main id="boot" hidden>
+  <h1><svg viewBox="0 0 44 26" aria-hidden="true" fill="none" stroke="#c9ad6f" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16c0-4 5-6.5 13-6.5S36 12 37 16c-1 4-8.5 6.5-17 6.5S7 20 7 16Z" fill="rgba(201,173,111,.10)"/><path d="M17 9.5V6h7l1.5 3.7M20.5 6V2.5h3"/><circle cx="15" cy="16" r="1.9"/><circle cx="21.5" cy="16" r="1.9"/><circle cx="28" cy="16" r="1.9"/></svg>Whispering Waves</h1>
+  <p id="boot-say" role="status">Fetching the dashboard from your sheet.</p>
+  <form id="boot-form" hidden novalidate>
+    <label for="boot-address">Web app address</label>
+    <input id="boot-address" type="url" autocomplete="off" spellcheck="false" placeholder="https://script.google.com/macros/s/.../exec">
+    <label for="boot-pass">Passphrase</label>
+    <input id="boot-pass" type="password" autocomplete="off">
+    <div class="row"><button type="submit" id="boot-go">Connect</button></div>
+  </form>
+  <div class="row" id="boot-again" hidden><button type="button" id="boot-retry">Try again</button><button type="button" class="quiet" id="boot-change">Change the address or passphrase</button></div>
+</main>
+<script>
+(function () {
+'use strict';
+const LOADER = '1';
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(key) { try { return window.localStorage.getItem('subsync.' + key); } catch (e) { return null; } },
+  set(key, value) { try { if (value === null) window.localStorage.removeItem('subsync.' + key); else window.localStorage.setItem('subsync.' + key, String(value)); return true; } catch (e) { return false; } }
+};
+const preset = window.SUBSYNC_PRESET || {};
+const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+
+/* Only this project's own tests put an address in the page link (...html#test&u=<address>&k=<passphrase>), and then
+   only an address on the same computer is accepted. Nothing else in a link is ever used. */
+const TESTING = hash.has('test');
+function onThisComputer(address) {
+  try { const url = new URL(address); return url.protocol === 'http:' && (url.hostname === '127.0.0.1' || url.hostname === 'localhost'); }
+  catch (e) { return false; }
+}
+const linked = TESTING && onThisComputer(hash.get('u') || '') ? { address: hash.get('u'), passphrase: hash.get('k') || '' } : null;
+
+function creds() {
+  if (linked) return linked;
+  return { address: String(preset.address || store.get('address') || '').trim(), passphrase: String(preset.passphrase || store.get('passphrase') || '') };
+}
+function addressProblem(address) {
+  if (!address) return 'Paste the web app address.';
+  let url;
+  try { url = new URL(address); } catch (e) { return 'That is not a web address.'; }
+  if (TESTING && onThisComputer(address)) return '';
+  if (url.protocol !== 'https:' || url.hostname !== 'script.google.com') return 'The address should start with https://script.google.com/macros/s/';
+  if (/\/dev$/.test(url.pathname)) return 'That is the test address (it ends in /dev). Use the one that ends in /exec.';
+  if (!/\/s\/[^/]+\/exec$/.test(url.pathname)) return 'The address should end in /exec.';
+  return '';
+}
+
+/* ---- asking the sheet script for the dashboard page (always with the passphrase) ---- */
+function withTimeout(promise, ms, controller) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => { if (controller) controller.abort(); reject(new Error('timeout')); }, ms);
+    promise.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+  });
+}
+async function askByPost(c, have) {
+  const controller = new AbortController();
+  const response = await withTimeout(fetch(c.address, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'dashboard', key: c.passphrase, have: have || '' }),
+    redirect: 'follow', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', signal: controller.signal
+  }), 30000, controller);
+  return JSON.parse(await response.text());
+}
+function askByScriptTag(c, have) {
+  return new Promise((resolve, reject) => {
+    const name = '__subsync_' + Math.random().toString(36).slice(2);
+    const tag = document.createElement('script');
+    const done = (fn, value) => { clearTimeout(timer); delete window[name]; tag.remove(); fn(value); };
+    const timer = setTimeout(() => done(reject, new Error('timeout')), 30000);
+    window[name] = (value) => done(resolve, value);
+    tag.onerror = () => done(reject, new Error('blocked'));
+    tag.referrerPolicy = 'no-referrer';
+    tag.src = c.address + '?action=dashboard&callback=' + name + '&key=' + encodeURIComponent(c.passphrase) + '&have=' + encodeURIComponent(have || '') + '&t=' + Date.now();
+    document.head.appendChild(tag);
+  });
+}
+/** The script's reply, or null when it could not be reached at all. Never asks anything but Google Apps Script. */
+async function ask(c, have) {
+  if (addressProblem(c.address)) return null;
+  try { return await askByPost(c, have); }
+  catch (first) { try { return await askByScriptTag(c, have); } catch (second) { return null; } }
+}
+/** Only a whole SubSync dashboard page is ever shown. */
+function usable(reply) {
+  return !!reply && reply.ok === true && typeof reply.id === 'string' && /^[0-9a-f]{64}$/.test(reply.id) &&
+    typeof reply.html === 'string' && reply.html.length > 2000 && reply.html.length < 3000000 &&
+    reply.html.indexOf('name="subsync-dashboard"') !== -1 && /<\/html>\s*$/i.test(reply.html);
+}
+
+/* ---- the copy kept in this browser, so the page opens at once and also without a connection ---- */
+function kept() {
+  const html = store.get('app.html'), id = store.get('app.id');
+  return html && id && html.indexOf('name="subsync-dashboard"') !== -1 ? { html, id, version: store.get('app.version') || '' } : null;
+}
+function keep(reply) {
+  const ok = store.set('app.html', reply.html) && store.set('app.id', reply.id) && store.set('app.version', reply.version || '');
+  if (!ok) { store.set('app.html', null); store.set('app.id', null); store.set('app.version', null); }
+  return ok;
+}
+
+/* ---- showing the dashboard: it takes over this page, in place ---- */
+const POLICY = document.querySelector('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
+let shown = null;        // the id of the page on screen
+let waiting = null;      // a newer page that has been fetched and kept, ready for the next open
+let checking = false, lastMiss = 0;
+
+function show(app) {
+  shown = app.id;
+  const storageWorks = store.set('probe', '1') && store.get('probe') === '1';
+  store.set('probe', null);
+  const c = creds();
+  window.SUBSYNC_LAUNCHER = {
+    loader: LOADER, id: app.id, version: app.version || '',
+    // the dashboard reads its details from the browser's storage; hand them over directly when that is not possible
+    preset: preset.address ? { address: preset.address, passphrase: preset.passphrase || '' } : (!storageWorks && c.address ? c : null),
+    seen: seen
+  };
+  // The same limits as this file's, written into the page as well.
+  // ...and anything in this file's head that is marked to stay (the home-screen icon and name of the hosted copy).
+  const keep = Array.from(document.querySelectorAll('head [data-keep]')).map((el) => el.outerHTML).join('\n');
+  const html = app.html.replace(/<head>/i, '<head>\n<meta http-equiv="Content-Security-Policy" content="' + POLICY + '">\n' + keep);
+  document.open();
+  document.write(html);
+  document.close();
+  const fresh = store.get('app.fresh');
+  if (fresh) { store.set('app.fresh', null); if (fresh === app.id) setTimeout(() => say('Dashboard updated' + (app.version ? ' to version ' + app.version : '') + '.', null, 9000), 600); }
+  document.addEventListener('visibilitychange', applyQuietly);
+}
+
+/** A small bar at the bottom of the dashboard. It belongs to the loader, so it works whatever the dashboard does. */
+function say(text, action, ms) {
+  const old = document.getElementById('subsync-loader-bar');
+  if (old) old.remove();
+  if (!document.body) return;
+  const bar = document.createElement('div');
+  bar.id = 'subsync-loader-bar';
+  bar.setAttribute('role', 'status');
+  bar.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483000;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;' +
+    'max-width:calc(100% - 32px);box-sizing:border-box;padding:10px 14px 10px 18px;border:1px solid #84714a;border-radius:999px;background:#141e2c;color:#e8e2d0;' +
+    'font:14px/1.4 "Segoe UI",system-ui,sans-serif;box-shadow:0 10px 34px rgba(0,0,0,.6)';
+  const label = document.createElement('span');
+  label.textContent = text;
+  bar.appendChild(label);
+  const button = (name, primary, fn) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = name;
+    b.style.cssText = 'appearance:none;cursor:pointer;padding:6px 14px;border-radius:999px;font:600 13.5px/1.2 "Segoe UI",system-ui,sans-serif;' +
+      (primary ? 'border:1px solid #c9ad6f;background:#c9ad6f;color:#141e2c' : 'border:1px solid #2a384d;background:transparent;color:#c8d0dc');
+    b.addEventListener('click', fn);
+    bar.appendChild(b);
+  };
+  if (action) { button(action.name, true, action.run); button('Later', false, () => bar.remove()); }
+  document.body.appendChild(bar);
+  if (ms) setTimeout(() => { if (bar.isConnected) bar.remove(); }, ms);
+}
+
+/** A newer page is kept and ready: offer it, or just switch while nobody is looking at the tab. */
+function offer() {
+  if (!waiting) return;
+  if (document.hidden) { applyQuietly(); return; }
+  say('A newer dashboard' + (waiting.version ? ' (' + waiting.version + ')' : '') + ' is ready.', { name: 'Reload now', run: () => window.location.reload() });
+}
+function applyQuietly() {
+  if (!waiting || !document.hidden) return;
+  const last = Number(store.get('app.reloadedAt')) || 0;
+  if (Date.now() - last < 10 * 60 * 1000) return;       // never more than one silent reload in ten minutes
+  store.set('app.reloadedAt', Date.now());
+  window.location.reload();
+}
+
+/** Asks the sheet whether its page differs from the one on screen, and keeps the newer one. Silent when anything fails. */
+async function check() {
+  if (checking || waiting) return;
+  const c = creds();
+  if (!c.address || !c.passphrase) return;
+  checking = true;
+  try {
+    const reply = await ask(c, shown);
+    if (reply && reply.ok === true && reply.same === true) { /* up to date */ }
+    else if (usable(reply) && reply.id !== shown && keep(reply)) {
+      store.set('app.fresh', reply.id);
+      waiting = { id: reply.id, version: reply.version || '' };
+      offer();
+    }
+    else lastMiss = Date.now();     // no answer, or nothing usable: do not ask again for a while
+  } catch (e) { lastMiss = Date.now(); }
+  checking = false;
+}
+/** The dashboard calls this after every read of the sheet, with the page the sheet is handing out now. */
+function seen(app) {
+  if (!app || typeof app.id !== 'string' || app.id === shown || waiting) return;
+  if (Date.now() - lastMiss < 5 * 60 * 1000) return;
+  check();
+}
+
+/* ---- the first open, before there is anything to show ---- */
+function status(text, bad) { const el = $('boot-say'); el.textContent = text; el.className = bad ? 'bad' : ''; }
+function form(message, bad) {
+  $('boot').hidden = false; $('boot-form').hidden = false; $('boot-again').hidden = true;
+  status(message || 'Paste the two things the sheet owner gave you. They are kept in this browser only.', bad);
+  const c = creds();
+  if (!$('boot-address').value) $('boot-address').value = c.address;
+  ($('boot-address').value ? $('boot-pass') : $('boot-address')).focus();
+}
+function failed(message, canChange) {
+  $('boot').hidden = false; $('boot-form').hidden = true; $('boot-again').hidden = false;
+  $('boot-change').hidden = !canChange || !!linked || !!preset.address;
+  status(message, true);
+}
+async function first(c, fromForm) {
+  $('boot').hidden = false; $('boot-again').hidden = true;
+  if (fromForm) $('boot-go').disabled = true; else $('boot-form').hidden = true;
+  status('Fetching the dashboard from your sheet.');
+  const reply = await ask(c, '');
+  if (fromForm) $('boot-go').disabled = false;
+  if (usable(reply)) {
+    if (fromForm) { store.set('address', c.address); store.set('passphrase', c.passphrase); }
+    keep(reply);                                   // without storage it is simply fetched again at the next open
+    if (fromForm && !store.get('address')) preset.address = c.address, preset.passphrase = c.passphrase;
+    show(reply);
+    return;
+  }
+  const s = reply && reply.status;
+  if (s === 403) return fromForm || !(linked || preset.address) ? form('The sheet refused the passphrase. Type it again.', true) : failed('The sheet refused the passphrase built into this file.', false);
+  if (s === 503) return failed('The sheet has no passphrase yet. In the spreadsheet, open the SubSync menu and choose Set passphrase.', true);
+  if (s === 404) return failed('The sheet script has no dashboard to hand out yet. Its owner needs to add the Dashboard file to the script and deploy a new version.', true);
+  if (s === 400) return failed('The sheet script is older than 1.5.0 and cannot hand out the dashboard. Its owner needs to update the script and deploy a new version.', true);
+  if (reply && reply.ok === true) return failed('The sheet script answered, but not with a dashboard page. Its owner should check the Dashboard file in the script.', true);
+  failed('No answer from the sheet script. Check your connection and the web app address. The script has to be deployed with access set to Anyone.', true);
+}
+
+$('boot-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const c = { address: $('boot-address').value.trim(), passphrase: $('boot-pass').value };
+  const problem = addressProblem(c.address) || (c.passphrase ? '' : 'Type the passphrase.');
+  if (problem) { status(problem, true); return; }
+  first(c, true);
+});
+$('boot-retry').addEventListener('click', () => first(creds(), false));
+$('boot-change').addEventListener('click', () => form());
+
+/* ---- start ---- */
+if (hash.has('fresh')) { store.set('app.html', null); store.set('app.id', null); store.set('app.version', null); }   // ...html#fresh throws the kept copy away
+function start() {
+  const have = kept();
+  if (have) { show(have); check(); return; }
+  const c = creds();
+  if (hash.has('demo') || !c.address || !c.passphrase || addressProblem(c.address)) form(c.address && addressProblem(c.address) ? 'The saved web app address is not a Google Apps Script address. Paste it again.' : '');
+  else first(c, false);
+}
+// Only once this file has been read to its end can the dashboard take the page over cleanly.
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
+</body>
+</html>
